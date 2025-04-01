@@ -1,3 +1,5 @@
+# This script will be used by admins to manage authorized personnel within the system
+
 import time
 from mfrc522 import SimpleMFRC522
 import RPi.GPIO as GPIO
@@ -5,12 +7,11 @@ import psycopg2
 
 reader = SimpleMFRC522();
 
-db_user = input("Enter DB Username: ");
 db_password = input("Enter DB Password: ");
 
 # create connection to postgres database
 connection = psycopg2.connect(host='localhost', 
-                              user=db_user,
+                              user='postgres',
                               password=db_password, 
                               dbname='access_control', 
                               port=5432)
@@ -22,7 +23,6 @@ def insert_user(rfid_tag, role):
     try:
         # create INSERT statement
         cursor.execute("INSERT INTO users (rfid_tag, role) VALUES (%s, %s) ON CONFLICT (rfid_tag) DO NOTHING", (rfid_tag, role));
-
         connection.commit();
         print("User successfully inserted into database!");
     except Exception as e:
