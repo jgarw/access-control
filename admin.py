@@ -1,49 +1,89 @@
-# This script will be used by admins to manage authorized personnel within the system
-
-import time
+from flask import Flask, flash, render_template, redirect, request, url_for
 from mfrc522 import SimpleMFRC522
 import RPi.GPIO as GPIO
 import psycopg2
+from dotenv import load_dotenv
+import os
 
-reader = SimpleMFRC522();
+app = Flask(__name__)
 
-db_password = input("Enter DB Password: ");
+ # Load environment variables from .env file
+load_dotenv() 
+app.secret_key = os.getenv("SECRET_KEY")
+db_password = os.getenv("DB_PASSWORD")
 
-# create connection to postgres database
-connection = psycopg2.connect(host='localhost', 
-                              user='postgres',
-                              password=db_password, 
-                              dbname='access_control', 
-                              port=5432)
+# Create RFID reader instance
+reader = SimpleMFRC522()
 
-cursor = connection.cursor();
+# method to get db connection (fixed cursor connection already closed errors)
+def get_db_connection():
+    """Create a new database connection for each request."""
+    return psycopg2.connect(
+        host='localhost',
+        user='postgres',
+        password=db_password,
+        dbname='access_control',
+        port=5432
+    )
 
-# create a method for inserting users into database
-def insert_user(rfid_tag, role):
-    try:
-        # create INSERT statement
-        cursor.execute("INSERT INTO users (rfid_tag, role) VALUES (%s, %s) ON CONFLICT (rfid_tag) DO NOTHING", (rfid_tag, role));
-        connection.commit();
-        print("User successfully inserted into database!");
-    except Exception as e:
-        print(f"Error inserting user: {e}")
-        connection.rollback()
+# index/home page of admin panel
+@app.route("/")
+def index():
+    # create connection to database
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-try:
-    print("Place tag near reader...");
-    id, text = reader.read();
-    role = input("Enter User's role...");
-    print("Inserting ID: ", id, " with role: ", role);
+    # query all users from database to display in table in index.html
+    cursor.execute("SELECT rfid_tag, role FROM users")
+    users = cursor.fetchall()
 
-    insert_user(id, role);
-    time.sleep(5)
-
-except KeyboardInterrupt:
-    print("Program interrupted and stopped.")
-finally:
-    GPIO.cleanup()
     cursor.close()
-    connection.close()
+    conn.close()  
+    return render_template('index.html', users=users)
 
+# route to handle admin adding new users
+@app.route("/add_user", methods=["GET", "POST"])
+def add_user():
+    scanned_id = 0
 
+    if request.method == "POST":
+        # if scan button pressed, read RFID tag from card
+        if "scan" in request.form:
+            scanned_id, _ = reader.read()
+            flash(f"Card scanned successfully! ID: {scanned_id}", "success")  # New success message
+            return render_template("add_user.html", scanned_id=scanned_id)
 
+        # if "add user" button pressed, insert values into users table
+        if "insert" in request.form:
+            rfid_tag = request.form["rfid_tag"]
+            role = request.form["role"]
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            try:
+                cursor.execute(
+                    "INSERT INTO users (rfid_tag, role) VALUES (%s, %s) ON CONFLICT (rfid_tag) DO NOTHING",
+                    (rfid_tag, role),
+                )
+                conn.commit()
+                flash("User added successfully!", "success")
+            except Exception as e:
+                print(f"Error inserting user: {e}")
+                conn.rollback()
+            finally:
+                cursor.close()
+                conn.close()  # Ensure connection is closed
+
+            return redirect(url_for("index"))
+
+    return render_template('add_user.html', scanned_id=scanned_id)
+
+# handle app termination and cleanup
+@app.teardown_appcontext
+def cleanup(exception=None):
+    """Cleanup GPIO on exit"""
+    GPIO.cleanup()
+
+if __name__ == '__main__':
+    app.run("0.0.0.0", debug=True)

@@ -1,3 +1,6 @@
+# app.py
+# This script will run on end devices to handle access control
+
 import time
 from mfrc522 import SimpleMFRC522
 import RPi.GPIO as GPIO
@@ -15,6 +18,7 @@ connection = psycopg2.connect(host='localhost',
                               port=5432)
 cursor = connection.cursor();
 
+# set up GPIO modes
 GPIO.setmode(GPIO.BOARD);
 GPIO.setup(36, GPIO.OUT);
 GPIO.setup(40, GPIO.OUT);
