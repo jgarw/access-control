@@ -25,7 +25,7 @@ Ensure your Raspberry Pi is running Raspbian OS and has internet access.
 ### 2. Clone the Repository
 ```sh
 git clone https://github.com/jgarw/access-control.git
-cd RFID-Access-Control
+cd access-control
 ```
 
 ### 3. Install Dependencies
