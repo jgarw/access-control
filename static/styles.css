@@ -1,0 +1,44 @@
+/* General styling */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #0f172a;
+}
+
+/* Custom title styling */
+.title {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 3px solid #007bff;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+/* Table Styling */
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table th {
+    background-color: #007bff !important;
+    text-align: center;
+    color: white;
+}
+
+.table td {
+    text-align: center;
+}
+
+/* Buttons */
+.btn-lg {
+    width: 200px;
+}
+
+/* Cards */
+.card {
+    background-color: #1e293b;
+    color: white;
+    border: 1px solid #007bff;
+    border-radius: 8px;
+}
