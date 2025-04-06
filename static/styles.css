@@ -1,6 +1,6 @@
 /* General styling */
 body {
-    font-family: 'Arial', sans-serif;
+    font-family: 'Poppins', sans-serif;
     background-color: #0f172a;
 }
 
@@ -14,19 +14,19 @@ body {
     padding-bottom: 5px;
 }
 
-/* Table Styling */
-.table {
+/* table-dark Styling */
+.table-dark {
     border-radius: 8px;
     overflow: hidden;
 }
 
-.table th {
+.table-dark th {
     background-color: #007bff !important;
     text-align: center;
     color: white;
 }
 
-.table td {
+.table-dark td {
     text-align: center;
 }
 
