@@ -1,22 +1,30 @@
 # RFID-Based Access Control System
 
-This project is an RFID-based access control system using a Raspberry Pi, Flask for the admin panel, and PostgreSQL for database management. The system allows administrators to manage users and their access roles through a web interface, while end devices verify RFID tags for granting or denying access.
+An RFID-based access control system using a Raspberry Pi and MFRC522 readers, with a Flask web interface for managing users and access roles. Role-based access is enforced per access point, and all data is stored in a PostgreSQL database.
+
 
 ## Features
-- **Admin Panel (Flask Web App):**
-  - View registered RFID tags and their assigned roles.
-  - Add new users by scanning RFID cards and assigning roles.
-  - Bootstrap-based UI for easy management.
-- **Access Control System (Raspberry Pi):**
-  - Supports multiple MFRC522 RFID readers via SPI switching.
-  - Role-based access permissions per reader.
-  - PostgreSQL-backed permission verification.
+
+### 🖥️ Admin Panel (Flask)
+- View and manage registered users and their RFID tags.
+- Add new users by scanning RFID cards and assigning roles.
+- Define which roles are allowed at specific access points.
+- Simple, responsive UI powered by HTML and Bootstrap.
+
+### 📡 Access Control Script (Raspberry Pi)
+- Supports **multiple RC522 readers** on a shared SPI bus using unique RST pins.
+- Readers are activated one at a time to simulate parallel scanning.
+- Access decisions are made by verifying the user’s role for the access point.
+- Clean GPIO handling and SPI management to prevent interference.
 
 ## Tech Stack
-- **Back-end:** Flask (Python)
-- **Database:** PostgreSQL
-- **Hardware:** Raspberry Pi, MFRC522 RFID Readers, LEDs
-- **Frontend:** HTML, Bootstrap
+
+| Layer        | Technology                        |
+|--------------|------------------------------------|
+| Back-End     | Python, Flask                      |
+| Front-End    | HTML, Bootstrap                    |
+| Database     | PostgreSQL                         |
+| Hardware     | Raspberry Pi, MFRC522 RFID Readers |
 
 ## Setup
 
@@ -82,17 +90,20 @@ python app.py
 This script will monitor all registered RFID readers and validate access based on roles.
 
 ## Usage
-- Use the web interface to register new users by scanning an RFID card and assigning a role.
-- Use the `access_permissions` table to define which roles can access specific points (e.g., doors, rooms).
-- The Raspberry Pi script reads RFID tags and validates them against both the `users` and `access_permissions` tables.
-- Access attempts are logged in the `access_logs` table for review.
+Use the admin panel to:
+- Register users by scanning RFID cards and assigning roles.
+- Set role permissions for specific access points (e.g., server room, lab).
+
+The Raspberry Pi will:
+- Read cards from each connected reader.
+- Check the card's associated role and determine access permission.
+- Print access logs to the console for now
 
 ## Future Improvements
 - Add user authentication for admin panel.
 - Add visual status indicators (e.g. LEDs, buzzers) for access granted/denied.
 - Allow real-time monitoring of access events from the web panel.
-- Enable dynamic assignment of multiple roles per user.
-- Export access logs to CSV or Excel.
+- Log events in postgres database 
 
 ## License
 This project is open-source and available under the MIT License.
