@@ -69,6 +69,7 @@ def add_user():
                 conn.commit()
                 flash("User added successfully!", "success")
             except Exception as e:
+                flash("Error inserting user!")
                 print(f"Error inserting user: {e}")
                 conn.rollback()
             finally:

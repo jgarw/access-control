@@ -5,12 +5,15 @@ import time
 from mfrc522 import SimpleMFRC522
 import RPi.GPIO as GPIO
 import psycopg2
+import os
+from dotenv import load_dotenv
 
 # create instance of RC522 reader
 reader = SimpleMFRC522();
 
 # handle database connection
-db_password = input("Enter DB Password: ");
+load_dotenv()
+db_password = os.getenv("DB_PASSWORD")
 connection = psycopg2.connect(host='localhost', 
                               user='postgres',
                               password=db_password, 
@@ -35,13 +38,13 @@ def check_access(rfid_tag):
 # function to light led on access granted
 def access_granted():
     GPIO.output(36, GPIO.HIGH);
-    time.sleep(5);
+    time.sleep(2);
     GPIO.output(36, GPIO.LOW);
 
 # function to light led on access denied
 def access_denied():
     GPIO.output(40, GPIO.HIGH);
-    time.sleep(5);
+    time.sleep(2);
     GPIO.output(40, GPIO.LOW);
 
 
@@ -65,7 +68,7 @@ try:
         else:
             access_denied();
         
-        time.sleep(5);
+        time.sleep(2);
 except:
     GPIO.cleanup()
 
