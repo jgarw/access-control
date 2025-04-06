@@ -1,5 +1,0 @@
-CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
-    rfid_tag VARCHAR(50) UNIQUE NOT NULL,
-    role VARCHAR(50) NOT NULL
-);
