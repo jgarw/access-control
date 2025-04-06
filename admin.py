@@ -1,3 +1,14 @@
+"""
+admin.py
+Flask admin panel for managing users and access point permissions.
+
+Overview:
+This script runs a web interface that allows RFID tags to be scanned and assigned roles.
+Admins can view users, assign roles, and configure which roles can access specific points.
+Uses PostgreSQL for storing users and permissions.
+RFID scanning is handled via the SimpleMFRC522 reader class.
+"""
+
 from flask import Flask, flash, render_template, redirect, request, url_for
 from mfrc522 import SimpleMFRC522
 import RPi.GPIO as GPIO
@@ -7,10 +18,14 @@ import os
 
 app = Flask(__name__)
 
- # Load environment variables from .env file
-load_dotenv() 
+# Get ENV variables from .env file
+load_dotenv()
 app.secret_key = os.getenv("SECRET_KEY")
+db_host = os.getenv("DB_HOST")
+db_user = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")
+db_port = os.getenv("DB_PORT")
 
 # Create RFID reader instance
 reader = SimpleMFRC522()
@@ -19,11 +34,11 @@ reader = SimpleMFRC522()
 def get_db_connection():
     """Create a new database connection for each request."""
     return psycopg2.connect(
-        host='localhost',
-        user='postgres',
+        host=db_host,
+        user=db_user,
         password=db_password,
-        dbname='access_control',
-        port=5432
+        dbname=db_name,
+        port=db_port
     )
 
 # index/home page of admin panel
@@ -79,6 +94,110 @@ def add_user():
             return redirect(url_for("index"))
 
     return render_template('add_user.html', scanned_id=scanned_id)
+
+# route to handle modifying access point roles
+@app.route("/access_points", methods=["GET", "POST"])
+def access_points():
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM access_permissions")
+
+    access_points = cursor.fetchall()
+
+    # cursor.execute("INSERT INTO access_permissions('access_point_id','allowed_roles') VALUES(%s, %s)", (rfid_tag, role))
+
+    return render_template("access_points.html", access_points=access_points)
+
+# route to handle adding access point role
+@app.route("/add_point_role", methods=["GET", "POST"])
+def add_point_role():
+
+    # if form is submitted
+    if request.method == "POST":
+        access_point = request.form['access_point']
+        role = request.form['role']
+
+        # try inserting values from form into table
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # prepare insert statement from form values
+            cursor.execute("INSERT INTO access_permissions(access_point_id, allowed_role) VALUES(%s, %s) ON CONFLICT DO NOTHING", (access_point, role))
+
+            conn.commit()
+            flash("Access permission added!", "success")
+
+        except Exception as e:
+            flash("Error adding access permission!", "danger")
+            print(f"Error: {e}")
+            conn.rollback()
+            return render_template("add_point_role.html")
+        finally:
+            cursor.close()
+            conn.close()
+
+        return redirect(url_for("access_points"))
+            
+    # on GET
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # retrieve the access_point_id's from access_permissions to add to select list
+    cursor.execute("SELECT DISTINCT access_point_id FROM access_permissions");
+    access_points = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    # load page with access_point values
+    return render_template("add_point_role.html", access_points=access_points)
+
+# route to handle deleting access point role
+@app.route("/delete_point_role", methods=["GET", "POST"])
+def delete_point_role():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if request.method == "POST":
+        access_point = request.form['access_point']
+        role = request.form['role']
+
+        try:
+            # delete selected role from access point
+            cursor.execute(
+                "DELETE FROM access_permissions WHERE access_point_id = %s AND allowed_role = %s",
+                (access_point, role)
+            )
+            conn.commit()
+            flash("Access permission removed.", "success")
+        except Exception as e:
+            flash(f"Error deleting access permission! {e}")
+            conn.rollback()
+            return render_template("delete_point_role.html")
+        finally:
+            cursor.close()
+            conn.close()
+        return render_template("access_points.html")
+
+    # On GET or pre-form POST
+    cursor.execute("SELECT DISTINCT access_point_id FROM access_permissions")
+    access_points = cursor.fetchall()
+
+    selected_point = request.args.get("access_point")
+    roles = []
+
+    if selected_point:
+        cursor.execute("SELECT allowed_role FROM access_permissions WHERE access_point_id = %s", (selected_point,))
+        roles = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return render_template("delete_point_role.html", access_points=access_points, roles=roles, selected_point=selected_point)
+
+
 
 # handle app termination and cleanup
 @app.teardown_appcontext

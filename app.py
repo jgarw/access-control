@@ -1,14 +1,15 @@
-# app.py
-# This script enables multiple RC522 RFID readers to scan cards in rapid sequence.
+"""
+app.py
+This script enables multiple RC522 RFID readers to scan cards in rapid sequence.
 
-# Thanks to insights shared by Lugico and Alex Berliner in this discussion:
-# https://raspberrypi.stackexchange.com/questions/31773/raspberry-pi-multiple-nfc-readers/137491#137491
+Thanks to insights shared by Lugico and Alex Berliner in this discussion:
+https://raspberrypi.stackexchange.com/questions/31773/raspberry-pi-multiple-nfc-readers/137491#137491
 
-# Overview:
-# This script defines an NFC class to manage multiple RC522 readers connected to a shared SPI bus.
-# Each reader has a dedicated RST (reset) GPIO pin and is initialized using the SimpleMFRC522 class.
-# Readers are polled in a loop, activating one at a time to simulate simultaneous scanning.
-
+Overview:
+This script defines an NFC class to manage multiple RC522 readers connected to a shared SPI bus.
+Each reader has a dedicated RST (reset) GPIO pin and is initialized using the SimpleMFRC522 class.
+Readers are polled in a loop, activating one at a time to simulate simultaneous scanning.
+"""
 import RPi.GPIO as GPIO
 from mfrc522 import SimpleMFRC522
 import spidev
@@ -17,8 +18,13 @@ import os
 from dotenv import load_dotenv
 import psycopg2
 
+# Get ENV variables from .env file
 load_dotenv()
+db_host = os.getenv("DB_HOST")
+db_user = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")
+db_port = os.getenv("DB_PORT")
 
 # Creates an NFC Class used for managing multiple RC522 readers.
 class NFC:
@@ -113,16 +119,15 @@ class NFC:
 
         return cid
 
-
 # method to get db connection (fixed cursor connection already closed errors)
 def get_db_connection():
     """Create a new database connection for each request."""
     return psycopg2.connect(
-        host='localhost',
-        user='postgres',
+        host=db_host,
+        user=db_user,
         password=db_password,
-        dbname='access_control',
-        port=5432
+        dbname=db_name,
+        port=db_port
     )
 
 # Gets user from database using rfid_tag from card
@@ -169,10 +174,12 @@ def check_access(rfid_tag, rid):
 
     check_permission = cursor.fetchone();
 
+    # Handle case where User exists but does not have required role(s)
     if not check_permission:
         print(f"User not allowed at access point {rid}")
         return False
     
+    # User exists and has required role(s) for access point
     print(f"User with id {rfid_tag} granted access to {rid}")
     return check_permission
 
