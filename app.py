@@ -17,6 +17,7 @@ import time
 import os
 from dotenv import load_dotenv
 import psycopg2
+import hashlib
 
 # Get ENV variables from .env file
 load_dotenv()
@@ -119,6 +120,10 @@ class NFC:
 
         return cid
 
+# Hashes ID passed as parameter using SHA256
+def hash_tag(rfid_tag):
+    return hashlib.sha256(rfid_tag.encode('utf-8')).hexdigest()
+
 # method to get db connection (fixed cursor connection already closed errors)
 def get_db_connection():
     """Create a new database connection for each request."""
@@ -137,18 +142,20 @@ def get_user(rfid_tag):
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    hashed = hash_tag(rfid_tag)
+
     try:
         # Create SELECT statement using rfid_tag scanned
-        cursor.execute("SELECT role FROM users WHERE rfid_tag = %s", (rfid_tag,))
+        cursor.execute("SELECT role FROM users WHERE rfid_tag = %s", (hashed,))
 
         result = cursor.fetchone()
 
         if not result:
-            print(f"User {rfid_tag} not found in database!")
+            print(f"User not found in database!")
             return False
 
         # Retrieve the role from the db associated with rfid_tag ID
-        print(f"Found {result[0]} from tag {rfid_tag}")
+        print(f"Found {result[0]}")
         return result[0]
     
     finally:
@@ -172,7 +179,7 @@ def check_access(rfid_tag, rid):
     # Create SELECT statement for access_permissions table
     cursor.execute("SELECT 1 FROM access_permissions WHERE access_point_id = %s and allowed_role = %s", (rid, role))
 
-    check_permission = cursor.fetchone();
+    check_permission = cursor.fetchone()
 
     # Handle case where User exists but does not have required role(s)
     if not check_permission:
@@ -180,18 +187,21 @@ def check_access(rfid_tag, rid):
         return False
     
     # User exists and has required role(s) for access point
-    print(f"User with id {rfid_tag} granted access to {rid}")
+    print(f"User with role {role} granted access to {rid}")
     return check_permission
 
 # ------------------------ MAIN PROGRAM ------------------------
 
 def main():
+
     # Instantiate NFC manager
     nfc = NFC()
 
     # Register readers by providing a name and their RST GPIO pin
     nfc.addBoard("server_room", 25)  # Example: Reader 1 reset pin connected to GPIO 25
     nfc.addBoard("maintenance_room", 23)  # Example: Reader 2 reset pin connected to GPIO 23
+
+    print("Place card near reader...")
 
     try:
         while True:
@@ -205,7 +215,8 @@ def main():
 
                     # Cast card_id to String
                     rfid_tag = str(card_id)
-                    check_access(rfid_tag, rid);
+                    check_access(rfid_tag, rid)
+                    print("\nPlace card near reader...")
 
             # Sleep briefly to avoid hammering the SPI bus and allow debounce
             time.sleep(0.5)
