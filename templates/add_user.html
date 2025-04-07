@@ -61,4 +61,14 @@
         <a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
     </div>
 
+    <!-- Handle showing scan message after scan button is pressed -->
+    <script>
+        const form = document.getElementById('scan-form');
+        const message = document.getElementById('scan-message');
+
+        form.addEventListener('submit', function () {
+            message.style.display = 'block';
+        });
+    </script>
+
     {% endblock %}
