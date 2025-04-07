@@ -15,6 +15,7 @@ import RPi.GPIO as GPIO
 import psycopg2
 from dotenv import load_dotenv
 import os
+import hashlib
 
 app = Flask(__name__)
 
@@ -41,6 +42,10 @@ def get_db_connection():
         port=db_port
     )
 
+# Hashes ID passed as parameter using SHA256
+def hash_tag(rfid_tag):
+    return hashlib.sha256(rfid_tag.encode('utf-8')).hexdigest()
+
 # index/home page of admin panel
 @app.route("/")
 def index():
@@ -49,7 +54,7 @@ def index():
     cursor = conn.cursor()
 
     # query all users from database to display in table in index.html
-    cursor.execute("SELECT rfid_tag, role FROM users")
+    cursor.execute("SELECT rfid_tag, first_name, last_name, role FROM users")
     users = cursor.fetchall()
 
     cursor.close()
@@ -65,24 +70,28 @@ def add_user():
         # if scan button pressed, read RFID tag from card
         if "scan" in request.form:
             scanned_id, _ = reader.read()
-            flash(f"Card scanned successfully! ID: {scanned_id}", "success")  # New success message
+            flash(f"Card scanned successfully!", "success")  # New success message
             return render_template("add_user.html", scanned_id=scanned_id)
 
         # if "add user" button pressed, insert values into users table
         if "insert" in request.form:
             rfid_tag = request.form["rfid_tag"]
+            first_name = request.form['first_name']
+            last_name = request.form['last_name']
             role = request.form["role"]
 
             conn = get_db_connection()
             cursor = conn.cursor()
 
+            hashed = hash_tag(rfid_tag)
+
             try:
                 cursor.execute(
-                    "INSERT INTO users (rfid_tag, role) VALUES (%s, %s) ON CONFLICT (rfid_tag) DO NOTHING",
-                    (rfid_tag, role),
+                    "INSERT INTO users (rfid_tag, first_name, last_name, role) VALUES (%s, %s, %s, %s) ON CONFLICT (rfid_tag) DO NOTHING",
+                    (hashed, first_name, last_name, role),
                 )
                 conn.commit()
-                flash("User added successfully!", "success")
+                flash(f"User {first_name} {last_name} added successfully!", "success")
             except Exception as e:
                 flash("Error inserting user!")
                 print(f"Error inserting user: {e}")
@@ -95,67 +104,60 @@ def add_user():
 
     return render_template('add_user.html', scanned_id=scanned_id)
 
-# route to handle modifying access point roles
+# Route to handle displaying access point roles
 @app.route("/access_points", methods=["GET", "POST"])
 def access_points():
-
     conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM access_permissions")
-
-    access_points = cursor.fetchall()
-
-    # cursor.execute("INSERT INTO access_permissions('access_point_id','allowed_roles') VALUES(%s, %s)", (rfid_tag, role))
-
-    return render_template("access_points.html", access_points=access_points)
-
-# route to handle adding access point role
-@app.route("/add_point_role", methods=["GET", "POST"])
-def add_point_role():
-
-    # if form is submitted
-    if request.method == "POST":
-        access_point = request.form['access_point']
-        role = request.form['role']
-
-        # try inserting values from form into table
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-
-            # prepare insert statement from form values
-            cursor.execute("INSERT INTO access_permissions(access_point_id, allowed_role) VALUES(%s, %s) ON CONFLICT DO NOTHING", (access_point, role))
-
-            conn.commit()
-            flash("Access permission added!", "success")
-
-        except Exception as e:
-            flash("Error adding access permission!", "danger")
-            print(f"Error: {e}")
-            conn.rollback()
-            return render_template("add_point_role.html")
-        finally:
-            cursor.close()
-            conn.close()
-
-        return redirect(url_for("access_points"))
-            
-    # on GET
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # retrieve the access_point_id's from access_permissions to add to select list
-    cursor.execute("SELECT DISTINCT access_point_id FROM access_permissions");
     access_points = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    # load page with access_point values
+    return render_template("access_points.html", access_points=access_points)
+
+
+# Route to handle adding access point role
+@app.route("/add_point_role", methods=["GET", "POST"])
+def add_point_role():
+    if request.method == "POST":
+        access_point = request.form['access_point']
+        role = request.form['role']
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "INSERT INTO access_permissions(access_point_id, allowed_role) VALUES(%s, %s) ON CONFLICT DO NOTHING",
+                (access_point, role)
+            )
+            conn.commit()
+            flash(f"Access permission {role} added to {access_point}!", "success")
+            return redirect(url_for("access_points"))
+
+        except Exception as e:
+            flash("Error adding access permission!", "danger")
+            print(f"Error: {e}")
+            conn.rollback()
+        finally:
+            cursor.close()
+            conn.close()
+
+    # On GET
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT access_point_id FROM access_permissions")
+    access_points = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
     return render_template("add_point_role.html", access_points=access_points)
 
-# route to handle deleting access point role
+
+# Route to handle deleting access point role
 @app.route("/delete_point_role", methods=["GET", "POST"])
 def delete_point_role():
     conn = get_db_connection()
@@ -166,21 +168,20 @@ def delete_point_role():
         role = request.form['role']
 
         try:
-            # delete selected role from access point
             cursor.execute(
                 "DELETE FROM access_permissions WHERE access_point_id = %s AND allowed_role = %s",
                 (access_point, role)
             )
             conn.commit()
-            flash("Access permission removed.", "success")
+            flash(f"Access permission {role} removed from {access_point}.", "success")
+            return redirect(url_for("access_points"))
+
         except Exception as e:
-            flash(f"Error deleting access permission! {e}")
+            flash(f"Error deleting access permission! {e}", "danger")
             conn.rollback()
-            return render_template("delete_point_role.html")
         finally:
             cursor.close()
             conn.close()
-        return render_template("access_points.html")
 
     # On GET or pre-form POST
     cursor.execute("SELECT DISTINCT access_point_id FROM access_permissions")
@@ -190,12 +191,21 @@ def delete_point_role():
     roles = []
 
     if selected_point:
-        cursor.execute("SELECT allowed_role FROM access_permissions WHERE access_point_id = %s", (selected_point,))
+        cursor.execute(
+            "SELECT allowed_role FROM access_permissions WHERE access_point_id = %s",
+            (selected_point,)
+        )
         roles = cursor.fetchall()
 
     cursor.close()
     conn.close()
-    return render_template("delete_point_role.html", access_points=access_points, roles=roles, selected_point=selected_point)
+
+    return render_template(
+        "delete_point_role.html",
+        access_points=access_points,
+        roles=roles,
+        selected_point=selected_point
+    )
 
 
 
