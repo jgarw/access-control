@@ -190,6 +190,23 @@ def check_access(rfid_tag, rid):
     print(f"User with role {role} granted access to {rid}")
     return check_permission
 
+# Log attempts into database log table
+def log_attempt(rfid_tag, rid, result, message):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("INSERT INTO access_logs(rfid_tag, reader_id, result, message) VALUES(%s, %s, %s, %s)", (hash_tag(rfid_tag), rid, result, message))
+        conn.commit()
+    except Exception as e:
+        print(f"Error creating log. {e}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+    
+
+
 # ------------------------ MAIN PROGRAM ------------------------
 
 def main():
@@ -215,7 +232,14 @@ def main():
 
                     # Cast card_id to String
                     rfid_tag = str(card_id)
-                    check_access(rfid_tag, rid)
+                    result = check_access(rfid_tag, rid)
+
+                    # Log attempts made to scan in
+                    if result:
+                        log_attempt(rfid_tag, rid, "success", None)
+                    else:
+                        log_attempt(rfid_tag, rid, "failure", "User not found or not allowed.")
+
                     print("\nPlace card near reader...")
 
             # Sleep briefly to avoid hammering the SPI bus and allow debounce
