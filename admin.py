@@ -126,7 +126,7 @@ def logs():
     cursor = conn.cursor()
 
     query = """
-            SELECT l.rfid_tag, u.first_name, u.last_name, l.timestamp
+            SELECT l.rfid_tag, u.first_name, u.last_name, l.reader_id, l.result, l.timestamp
             FROM access_logs as l
             JOIN users as u ON u.rfid_tag = l.rfid_tag
             ORDER BY l.timestamp DESC
@@ -137,6 +137,8 @@ def logs():
     results = cursor.fetchall()
     
     return render_template("logs.html", results=results)
+
+
 # Route to handle adding access point role
 @app.route("/add_point_role", methods=["GET", "POST"])
 def add_point_role():
