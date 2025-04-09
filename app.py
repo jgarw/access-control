@@ -27,6 +27,11 @@ db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
 db_port = os.getenv("DB_PORT")
 
+# Setup LED pins
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(20, GPIO.OUT)
+GPIO.setup(21, GPIO.OUT)
+
 # Creates an NFC Class used for managing multiple RC522 readers.
 class NFC:
     # Initializes the NFC class for managing multiple RC522 readers
@@ -184,12 +189,26 @@ def check_access(rfid_tag, rid):
     if not check_permission:
         print(f"User not allowed at access point {rid}")
         log_attempt(rfid_tag, rid, "failure", f"User not found or not allowed at {rid}.")
+        access_denied()
         return False
     
     # User exists and has required role(s) for access point
     print(f"User with role {role} granted access to {rid}")
     log_attempt(rfid_tag, rid, "success", f"User with role {role} granted access to {rid}")
+    access_granted()
     return check_permission
+
+# Light up green LED on access granted
+def access_granted():
+    GPIO.output(20, GPIO.HIGH)
+    time.sleep(2)
+    GPIO.output(20, GPIO.LOW)
+
+# Light up red LED on access granted
+def access_denied():
+    GPIO.output(21, GPIO.HIGH)
+    time.sleep(2)
+    GPIO.output(21, GPIO.LOW)
 
 # Log attempts into database log table
 def log_attempt(rfid_tag, rid, result, message):
