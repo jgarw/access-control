@@ -39,6 +39,10 @@ Each MFRC522 RFID reader must share common SPI lines (SCK, MOSI, MISO), but must
 
 You may adjust the RST pins to your preferred available GPIOs. Only one reader should be active at a time.
 
+#### Example Wiring Diagram
+<!-- ![Wiring Diagram](resources/eqmBT.png) -->
+<img src="resources/eqmBT.png" alt="Alt Text" style="width:70%; height:auto;">
+
 ### 2. Clone the Repository
 ```sh
 git clone https://github.com/jgarw/access-control.git
@@ -54,7 +58,7 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory and define the required environment variables:
 ```
 DB_HOST="localhost"
-DB_USER="postgres"
+DB_USER="your_username"
 DB_PASSWORD="your_password"
 DB_NAME="access_control"
 DB_PORT="5432"
@@ -112,7 +116,6 @@ The Raspberry Pi will:
 
 ## Future Improvements
 - Add user authentication for admin panel.
-- Add visual status indicators (e.g. LEDs, buzzers) for access granted/denied.
 
 ## License
 This project is open-source and available under the MIT License.
