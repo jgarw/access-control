@@ -155,7 +155,6 @@ def get_user(rfid_tag):
             return False
 
         # Retrieve the role from the db associated with rfid_tag ID
-        print(f"Found {result[0]}")
         return result[0]
     
     finally:
@@ -184,10 +183,12 @@ def check_access(rfid_tag, rid):
     # Handle case where User exists but does not have required role(s)
     if not check_permission:
         print(f"User not allowed at access point {rid}")
+        log_attempt(rfid_tag, rid, "failure", f"User not found or not allowed at {rid}.")
         return False
     
     # User exists and has required role(s) for access point
     print(f"User with role {role} granted access to {rid}")
+    log_attempt(rfid_tag, rid, "success", f"User with role {role} granted access to {rid}")
     return check_permission
 
 # Log attempts into database log table
@@ -233,12 +234,6 @@ def main():
                     # Cast card_id to String
                     rfid_tag = str(card_id)
                     result = check_access(rfid_tag, rid)
-
-                    # Log attempts made to scan in
-                    if result:
-                        log_attempt(rfid_tag, rid, "success", None)
-                    else:
-                        log_attempt(rfid_tag, rid, "failure", "User not found or not allowed.")
 
                     print("\nPlace card near reader...")
 
