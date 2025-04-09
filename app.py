@@ -205,8 +205,6 @@ def log_attempt(rfid_tag, rid, result, message):
     finally:
         cursor.close()
         conn.close()
-    
-
 
 # ------------------------ MAIN PROGRAM ------------------------
 
