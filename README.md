@@ -41,7 +41,7 @@ You may adjust the RST pins to your preferred available GPIOs. Only one reader s
 
 #### Example Wiring Diagram
 <!-- ![Wiring Diagram](resources/eqmBT.png) -->
-<img src="resources/eqmBT.png" alt="Alt Text" style="width:70%; height:auto;">
+<img src="resources/eqmBT.png" alt="Wiring Diagram" style="width:70%; height:auto;">
 
 ### 2. Clone the Repository
 ```sh
