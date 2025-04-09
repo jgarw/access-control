@@ -113,8 +113,6 @@ The Raspberry Pi will:
 ## Future Improvements
 - Add user authentication for admin panel.
 - Add visual status indicators (e.g. LEDs, buzzers) for access granted/denied.
-- Allow real-time monitoring of access events from the web panel.
-- Log events in postgres database 
 
 ## License
 This project is open-source and available under the MIT License.
