@@ -40,7 +40,8 @@ Each MFRC522 RFID reader must share common SPI lines (SCK, MOSI, MISO), but must
 You may adjust the RST pins to your preferred available GPIOs. Only one reader should be active at a time.
 
 #### Example Wiring Diagram
-![Wiring Diagram](resources/eqmBT.png)
+<!-- ![Wiring Diagram](resources/eqmBT.png) -->
+<img src="resources/eqmBT.png" alt="Alt Text" style="width:70%; height:auto;">
 
 ### 2. Clone the Repository
 ```sh
