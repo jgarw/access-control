@@ -46,7 +46,7 @@ def get_db_connection():
 def hash_tag(rfid_tag):
     return hashlib.sha256(rfid_tag.encode('utf-8')).hexdigest()
 
-# index/home page of admin panel
+# Index/home page of admin panel
 @app.route("/")
 def index():
     # create connection to database
@@ -61,7 +61,7 @@ def index():
     conn.close()  
     return render_template('index.html', users=users)
 
-# route to handle admin adding new users
+# Route to handle admin adding new users
 @app.route("/add_user", methods=["GET", "POST"])
 def add_user():
     scanned_id = 0
@@ -117,6 +117,26 @@ def access_points():
     conn.close()
 
     return render_template("access_points.html", access_points=access_points)
+
+# Route for displaying information from log table
+@app.route("/logs", methods=["GET", "POST"])
+def logs():
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = """
+            SELECT l.rfid_tag, u.first_name, u.last_name, l.reader_id, l.result, l.timestamp
+            FROM access_logs as l
+            JOIN users as u ON u.rfid_tag = l.rfid_tag
+            ORDER BY l.timestamp DESC
+            LIMIT 20;
+            """
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+    
+    return render_template("logs.html", results=results)
 
 
 # Route to handle adding access point role

@@ -67,6 +67,8 @@ Set up the PostgreSQL database with the required tables:
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     rfid_tag VARCHAR(50) UNIQUE NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
     role VARCHAR(50) NOT NULL
 );
 
@@ -74,6 +76,15 @@ CREATE TABLE access_permissions (
     access_point_id VARCHAR(50),  
     allowed_role VARCHAR(50), 
     PRIMARY KEY (access_point_id, allowed_role)
+);
+
+CREATE TABLE access_logs (
+    id SERIAL PRIMARY KEY,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    rfid_tag VARCHAR(64),
+    reader_id VARCHAR(50),
+    result VARCHAR(50),
+    message TEXT
 );
 ```
 
@@ -102,8 +113,6 @@ The Raspberry Pi will:
 ## Future Improvements
 - Add user authentication for admin panel.
 - Add visual status indicators (e.g. LEDs, buzzers) for access granted/denied.
-- Allow real-time monitoring of access events from the web panel.
-- Log events in postgres database 
 
 ## License
 This project is open-source and available under the MIT License.
