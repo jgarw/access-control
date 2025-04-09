@@ -66,7 +66,7 @@ Set up the PostgreSQL database with the required tables:
 ```sql
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
-    rfid_tag VARCHAR(50) UNIQUE NOT NULL,
+    rfid_tag VARCHAR(64) UNIQUE NOT NULL,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     role VARCHAR(50) NOT NULL
