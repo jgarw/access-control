@@ -7,7 +7,7 @@ This page will be used for adding roles to access points via the admin panel UI
 {% block title %}Add Access Permission{% endblock %}
 
 {% block content %}
-            <h1 class="text-center mb-4">Add Access point Role</h1>
+        <h1 class="text-center mb-4">Add Access point Role</h1>
             <div class="container col-md-6 p-4 bg-secondary rounded shadow">
 
                 {% if access_points %}
@@ -36,11 +36,9 @@ This page will be used for adding roles to access points via the admin panel UI
                     {% else %}
                         <p>No Access Points Configured</p>
                     {% endif %}
-                <!-- </div>
-                <div class="text-center">
-                <a href="{{ url_for('access_points') }}" class="btn btn-secondary">Back</a>
-                </div> -->
+                </div>
             </div>
-            
-        </div>
+            <div class="text-center mt-3">
+                <a href="{{url_for('access_points')}}" class="btn btn-secondary" mt-3>Back</a>
+            </div>
 {% endblock %}
