@@ -9,13 +9,18 @@ Uses PostgreSQL for storing users and permissions.
 RFID scanning is handled via the SimpleMFRC522 reader class.
 """
 
+from dotenv import load_dotenv
 from flask import Flask, flash, render_template, redirect, request, url_for
 from mfrc522 import SimpleMFRC522
 import RPi.GPIO as GPIO
 from access.hash import hash_tag
+import os
 from database.connection import get_db_connection
 
 app = Flask(__name__)
+
+load_dotenv()
+app.secret_key = os.getenv("SECRET_KEY")
 
 # Create RFID reader instance
 reader = SimpleMFRC522()
