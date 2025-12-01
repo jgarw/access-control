@@ -100,7 +100,7 @@ The admin panel will be available at `http://localhost:5000/`.
 
 ### 7. Run the Access Control Script on Raspberry Pi
 ```sh
-python app.py
+python main.py
 ```
 This script will monitor all registered RFID readers and validate access based on roles.
 

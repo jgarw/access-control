@@ -9,42 +9,21 @@ Uses PostgreSQL for storing users and permissions.
 RFID scanning is handled via the SimpleMFRC522 reader class.
 """
 
+from dotenv import load_dotenv
 from flask import Flask, flash, render_template, redirect, request, url_for
 from mfrc522 import SimpleMFRC522
 import RPi.GPIO as GPIO
-import psycopg2
-from dotenv import load_dotenv
+from access.hash import hash_tag
 import os
-import hashlib
+from database.connection import get_db_connection
 
 app = Flask(__name__)
 
-# Get ENV variables from .env file
 load_dotenv()
 app.secret_key = os.getenv("SECRET_KEY")
-db_host = os.getenv("DB_HOST")
-db_user = os.getenv("DB_USER")
-db_password = os.getenv("DB_PASSWORD")
-db_name = os.getenv("DB_NAME")
-db_port = os.getenv("DB_PORT")
 
 # Create RFID reader instance
 reader = SimpleMFRC522()
-
-# method to get db connection (fixed cursor connection already closed errors)
-def get_db_connection():
-    """Create a new database connection for each request."""
-    return psycopg2.connect(
-        host=db_host,
-        user=db_user,
-        password=db_password,
-        dbname=db_name,
-        port=db_port
-    )
-
-# Hashes ID passed as parameter using SHA256
-def hash_tag(rfid_tag):
-    return hashlib.sha256(rfid_tag.encode('utf-8')).hexdigest()
 
 # Index/home page of admin panel
 @app.route("/")
